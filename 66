@@ -1,0 +1,143 @@
+--[[
+    66 SCRIPT V5 - PRO HUNTER EDITION (AUTO-JOIN + SERVER SCANNER)
+]]
+
+if _G.AutoJoiner66Loaded then return end
+_G.AutoJoiner66Loaded = true
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
+local HttpService = game:GetService("HttpService")
+local LogService = game:GetService("LogService")
+
+-- INTERFAZ PRO
+local screenGui = Instance.new("ScreenGui")
+local mainFrame = Instance.new("Frame")
+local statusLabel = Instance.new("TextLabel")
+local titleLabel = Instance.new("TextLabel")
+local closeButton = Instance.new("TextButton")
+local huntButton = Instance.new("TextButton") -- BOTÓN HUNTER
+local logFrame = Instance.new("ScrollingFrame")
+local uiCorner = Instance.new("UICorner")
+
+screenGui.Name = "66_HunterGui"
+screenGui.Parent = game:GetService("CoreGui")
+
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+mainFrame.Position = UDim2.new(0.02, 0, 0.45, 0)
+mainFrame.Size = UDim2.new(0, 220, 0, 260)
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = mainFrame
+
+titleLabel.Parent = mainFrame
+titleLabel.BackgroundTransparency = 1
+titleLabel.Position = UDim2.new(0.05, 0, 0.02, 0)
+titleLabel.Size = UDim2.new(0.7, 0, 0.1, 0)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "66 HUNTER V5"
+titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- Dorado
+titleLabel.TextSize = 16
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+statusLabel.Parent = mainFrame
+statusLabel.Position = UDim2.new(0.05, 0, 0.12, 0)
+statusLabel.Size = UDim2.new(0.9, 0, 0.08, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Text = "● BUSCANDO SERVIDORES TOP"
+statusLabel.TextColor3 = Color3.fromRGB(0, 255, 200)
+statusLabel.TextSize = 11
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- BOTÓN DE BUSQUEDA POTENTE
+huntButton.Parent = mainFrame
+huntButton.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
+huntButton.Position = UDim2.new(0.05, 0, 0.22, 0)
+huntButton.Size = UDim2.new(0.9, 0, 0.12, 0)
+huntButton.Font = Enum.Font.GothamBold
+huntButton.Text = "FAST SERVER HOP"
+huntButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+huntButton.TextSize = 12
+Instance.new("UICorner", huntButton).CornerRadius = UDim.new(0, 6)
+
+-- LOGS
+logFrame.Name = "LogFrame"
+logFrame.Parent = mainFrame
+logFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+logFrame.Position = UDim2.new(0.05, 0, 0.38, 0)
+logFrame.Size = UDim2.new(0.9, 0, 0.58, 0)
+logFrame.CanvasSize = UDim2.new(0, 0, 15, 0)
+logFrame.ScrollBarThickness = 3
+local uiList = Instance.new("UIListLayout", logFrame)
+uiList.Padding = UDim.new(0, 2)
+
+local function addLog(msg, color)
+    local t = Instance.new("TextLabel", logFrame)
+    t.BackgroundTransparency = 1
+    t.Size = UDim2.new(1, 0, 0, 16)
+    t.Font = Enum.Font.Code
+    t.Text = "> " .. msg
+    t.TextColor3 = color or Color3.fromRGB(180, 180, 180)
+    t.TextSize = 10
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    logFrame.CanvasPosition = Vector2.new(0, logFrame.AbsoluteCanvasSize.Y)
+end
+
+-- LÓGICA DE BÚSQUEDA AVANZADA (HUNTER)
+local function ServerHop()
+    addLog("Escaneando servidores...", Color3.fromRGB(255, 255, 0))
+    local url = "https://games.roblox.com"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    
+    if success and result.data then
+        for _, server in pairs(result.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                addLog("Saltando a: " .. server.id:sub(1,8), Color3.fromRGB(0, 255, 100))
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id)
+                return
+            end
+        end
+    else
+        addLog("Error al escanear, reintentando...", Color3.fromRGB(255, 0, 0))
+    end
+end
+
+huntButton.MouseButton1Click:Connect(ServerHop)
+
+-- AUTO-REJOIN POTENTE (Anti-Kick/Lag/Crash)
+GuiService.ErrorMessageChanged:Connect(function()
+    addLog("DESCONEXIÓN DETECTADA", Color3.fromRGB(255, 50, 50))
+    for i = 5, 1, -1 do
+        addLog("Reintentando en " .. i .. "s...", Color3.fromRGB(255, 150, 0))
+        task.wait(1)
+    end
+    ServerHop() -- Busca el mejor server disponible al reconectar
+end)
+
+-- ANTI-AFK 100% EFECTIVO
+spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(0.1)
+            game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    end
+end)
+
+closeButton.Parent = mainFrame
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+closeButton.Position = UDim2.new(0.85, 0, 0.02, 0)
+closeButton.Size = UDim2.new(0, 22, 0, 22)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", closeButton).CornerRadius = UDim.new(0, 6)
+closeButton.MouseButton1Click:Connect(function() screenGui:Destroy() _G.AutoJoiner66Loaded = false end)
+
+addLog("66 Hunter V5 Listo.", Color3.fromRGB(255, 215, 0))
